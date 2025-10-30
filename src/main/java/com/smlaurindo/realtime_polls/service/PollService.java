@@ -3,10 +3,7 @@ package com.smlaurindo.realtime_polls.service;
 import com.smlaurindo.realtime_polls.domain.Option;
 import com.smlaurindo.realtime_polls.domain.Poll;
 import com.smlaurindo.realtime_polls.domain.PollStatus;
-import com.smlaurindo.realtime_polls.dto.CreatePollRequest;
-import com.smlaurindo.realtime_polls.dto.EditPollRequest;
-import com.smlaurindo.realtime_polls.dto.EditPollResponse;
-import com.smlaurindo.realtime_polls.dto.ListPollsResponse;
+import com.smlaurindo.realtime_polls.dto.*;
 import com.smlaurindo.realtime_polls.exception.InvalidPollDateException;
 import com.smlaurindo.realtime_polls.exception.PollAlreadyStartedException;
 import com.smlaurindo.realtime_polls.exception.ResourceNotFoundException;
@@ -18,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,7 +27,7 @@ public class PollService {
     private final OptionRepository optionRepository;
 
     @Transactional
-    public Poll createPoll(CreatePollRequest request) {
+    public CreatePollResponse createPoll(CreatePollRequest request) {
         var poll = Poll.builder()
                 .question(request.question())
                 .startsAt(request.startsAt().toInstant())
@@ -51,7 +47,20 @@ public class PollService {
 
         poll.setOptions(options);
 
-        return poll;
+        return new CreatePollResponse(
+                poll.getId(),
+                poll.getQuestion(),
+                poll.getStatus(),
+                poll.getStartsAt().toString(),
+                poll.getEndsAt().toString(),
+                poll.getOptions().stream()
+                        .map(option -> new CreatePollResponse.OptionResponse(
+                                option.getId(),
+                                option.getText(),
+                                option.getVotes()
+                        ))
+                        .toList()
+        );
     }
 
     @Transactional(readOnly = true)
