@@ -1,5 +1,8 @@
 server:
   port: ${SERVER_PORT}
+  error:
+    whitelabel:
+      enabled: false
 spring:
   application:
     name: realtime-polls
@@ -17,6 +20,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
+        format_sql: true
   flyway:
     enabled: true
     baseline-on-migrate: true

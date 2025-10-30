@@ -1,5 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+SET TIMEZONE='UTC';
+
 CREATE TABLE polls(
    id        VARCHAR(255) NOT NULL,
    question  TEXT NOT NULL,
