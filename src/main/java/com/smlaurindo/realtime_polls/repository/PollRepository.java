@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface PollRepository extends JpaRepository<Poll, String> {
 
@@ -28,4 +30,11 @@ public interface PollRepository extends JpaRepository<Poll, String> {
         WHERE CURRENT_TIMESTAMP >= p.endsAt
     """)
     Page<Poll> findAllFinished(Pageable pageable);
+
+    @Query("""
+        SELECT p FROM Poll p
+        LEFT JOIN FETCH p.options
+        WHERE p.id = :pollId
+    """)
+    Optional<Poll> findByIdWithOptions(String pollId);
 }

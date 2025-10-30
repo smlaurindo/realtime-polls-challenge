@@ -71,4 +71,36 @@ public class GlobalExceptionHandler {
                         Instant.now()
                 ));
     }
+
+    @ExceptionHandler(PollAlreadyStartedException.class)
+    public ResponseEntity<ErrorResponse> handlePollAlreadyStartedException(
+            PollAlreadyStartedException exception,
+            WebRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(
+                        request.getDescription(false).replace("uri=", ""),
+                        HttpStatus.CONFLICT.value(),
+                        "Poll Already Started",
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(InvalidPollDateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPollDateException(
+            InvalidPollDateException exception,
+            WebRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(
+                        request.getDescription(false).replace("uri=", ""),
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Invalid Poll Date",
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
 }

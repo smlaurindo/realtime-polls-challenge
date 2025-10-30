@@ -4,7 +4,11 @@ import com.smlaurindo.realtime_polls.domain.Option;
 import com.smlaurindo.realtime_polls.domain.Poll;
 import com.smlaurindo.realtime_polls.domain.PollStatus;
 import com.smlaurindo.realtime_polls.dto.CreatePollRequest;
+import com.smlaurindo.realtime_polls.dto.EditPollRequest;
+import com.smlaurindo.realtime_polls.dto.EditPollResponse;
 import com.smlaurindo.realtime_polls.dto.ListPollsResponse;
+import com.smlaurindo.realtime_polls.exception.InvalidPollDateException;
+import com.smlaurindo.realtime_polls.exception.PollAlreadyStartedException;
 import com.smlaurindo.realtime_polls.exception.ResourceNotFoundException;
 import com.smlaurindo.realtime_polls.repository.OptionRepository;
 import com.smlaurindo.realtime_polls.repository.PollRepository;
@@ -14,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,6 +87,46 @@ public class PollService {
                         ))
                         .toList()
         ));
+    }
+
+    @Transactional
+    public EditPollResponse editPoll(String pollId, EditPollRequest request) {
+        var poll = pollRepository.findByIdWithOptions(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll with id " + pollId + " does not exist."));
+
+        if (poll.getStatus() != PollStatus.NOT_STARTED) {
+            throw new PollAlreadyStartedException("Poll cannot be edited after it has started.");
+        }
+
+        if (request.question() != null) poll.setQuestion(request.question());
+
+        if (request.startsAt() != null) poll.setStartsAt(request.startsAt().toInstant());
+
+        if (request.endsAt() != null) poll.setEndsAt(request.endsAt().toInstant());
+
+        var start = poll.getStartsAt();
+        var end = poll.getEndsAt();
+
+        if (start != null && end != null && !end.isAfter(start)) {
+            throw new InvalidPollDateException("The end date must be after the start date.");
+        }
+
+        pollRepository.save(poll);
+
+        return new EditPollResponse(
+                poll.getId(),
+                poll.getQuestion(),
+                poll.getStatus(),
+                poll.getStartsAt().toString(),
+                poll.getEndsAt().toString(),
+                poll.getOptions().stream()
+                        .map(option -> new EditPollResponse.OptionResponse(
+                                option.getId(),
+                                option.getText(),
+                                option.getVotes()
+                        ))
+                        .toList()
+        );
     }
 
     @Transactional

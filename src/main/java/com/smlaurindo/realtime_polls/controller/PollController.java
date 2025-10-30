@@ -2,6 +2,8 @@ package com.smlaurindo.realtime_polls.controller;
 
 import com.smlaurindo.realtime_polls.domain.PollStatus;
 import com.smlaurindo.realtime_polls.dto.CreatePollRequest;
+import com.smlaurindo.realtime_polls.dto.EditPollRequest;
+import com.smlaurindo.realtime_polls.dto.EditPollResponse;
 import com.smlaurindo.realtime_polls.dto.ListPollsResponse;
 import com.smlaurindo.realtime_polls.service.PollService;
 import jakarta.validation.Valid;
@@ -49,6 +51,16 @@ public class PollController {
         var polls = pollService.listPolls(status, pageable);
 
         return ResponseEntity.ok(polls);
+    }
+
+    @PutMapping("/polls/{pollId}")
+    public ResponseEntity<EditPollResponse> editPoll(
+            @PathVariable("pollId") String pollId,
+            @RequestBody @Valid EditPollRequest request
+    ) {
+        var poll = pollService.editPoll(pollId, request);
+
+        return ResponseEntity.ok(poll);
     }
 
     @DeleteMapping("/polls/{pollId}")
