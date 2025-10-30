@@ -6,6 +6,7 @@ import com.smlaurindo.realtime_polls.domain.PollStatus;
 import com.smlaurindo.realtime_polls.dto.CreatePollRequest;
 import com.smlaurindo.realtime_polls.dto.ListPollsResponse;
 import com.smlaurindo.realtime_polls.exception.ResourceNotFoundException;
+import com.smlaurindo.realtime_polls.repository.OptionRepository;
 import com.smlaurindo.realtime_polls.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,12 +15,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PollService {
 
     private final PollRepository pollRepository;
+    private final OptionRepository optionRepository;
 
     @Transactional
     public Poll createPoll(CreatePollRequest request) {
@@ -29,6 +33,8 @@ public class PollService {
                 .endsAt(request.endsAt().toInstant())
                 .build();
 
+        pollRepository.save(poll);
+
         List<Option> options = request.options().stream()
                 .map(text -> Option.builder()
                         .text(text)
@@ -36,9 +42,11 @@ public class PollService {
                         .build()
                 ).toList();
 
+        optionRepository.saveAll(options);
+
         poll.setOptions(options);
 
-        return pollRepository.save(poll);
+        return poll;
     }
 
     @Transactional(readOnly = true)
@@ -50,19 +58,29 @@ public class PollService {
             case null -> pollRepository.findAll(pageable);
         };
 
+        List<String> pollIds = pollPage.stream()
+                .map(Poll::getId)
+                .toList();
+
+        List<Option> options = optionRepository.findByPollIds(pollIds);
+
+        Map<String, List<Option>> optionsByPollId = options.stream()
+                .collect(Collectors.groupingBy(option -> option.getPoll().getId()));
+
         return pollPage.map((poll) -> new ListPollsResponse(
                 poll.getId(),
                 poll.getQuestion(),
                 poll.getStatus(),
                 poll.getStartsAt().toString(),
                 poll.getEndsAt().toString(),
-                poll.getOptions()
+                optionsByPollId.getOrDefault(poll.getId(), List.of())
                         .stream()
                         .map(option -> new ListPollsResponse.OptionResponse(
                                 option.getId(),
                                 option.getText(),
                                 option.getVotes()
-                        )).toList()
+                        ))
+                        .toList()
         ));
     }
 

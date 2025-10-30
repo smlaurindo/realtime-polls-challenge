@@ -25,15 +25,10 @@ public class Poll {
     @Column(name = "starts_at")
     private Instant startsAt;
 
-    @Column(name = "ends_At")
+    @Column(name = "ends_at")
     private Instant endsAt;
 
-    @OneToMany(
-            mappedBy = "poll",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY
-    )
+    @OneToMany(mappedBy = "poll", fetch = FetchType.LAZY)
     private List<Option> options;
 
     @Transient
