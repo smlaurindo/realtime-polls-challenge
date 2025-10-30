@@ -50,4 +50,11 @@ public class PollController {
 
         return ResponseEntity.ok(polls);
     }
+
+    @DeleteMapping("/polls/{pollId}")
+    public ResponseEntity<Void> deletePoll(@PathVariable("pollId") String pollId) {
+        pollService.deletePoll(pollId);
+
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -5,6 +5,7 @@ import com.smlaurindo.realtime_polls.domain.Poll;
 import com.smlaurindo.realtime_polls.domain.PollStatus;
 import com.smlaurindo.realtime_polls.dto.CreatePollRequest;
 import com.smlaurindo.realtime_polls.dto.ListPollsResponse;
+import com.smlaurindo.realtime_polls.exception.ResourceNotFoundException;
 import com.smlaurindo.realtime_polls.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -63,5 +64,16 @@ public class PollService {
                                 option.getVotes()
                         )).toList()
         ));
+    }
+
+    @Transactional
+    public void deletePoll(String pollId) {
+        var pollToDelete = pollRepository.existsById(pollId);
+
+        if (!pollToDelete) {
+            throw new ResourceNotFoundException("Poll with id " + pollId + " does not exist.");
+        }
+
+        pollRepository.deleteById(pollId);
     }
 }

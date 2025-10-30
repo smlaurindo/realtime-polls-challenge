@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleMethodArgumentNotValid(
+    public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception,
             WebRequest request
     ) {
@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGlobalException(
+    public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception exception,
             WebRequest request
     ) {
@@ -52,6 +52,22 @@ public class GlobalExceptionHandler {
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
                         "Internal Server Error",
                         "An unexpected error occurred.",
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException exception,
+            WebRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(
+                        request.getDescription(false).replace("uri=", ""),
+                        HttpStatus.NOT_FOUND.value(),
+                        "Resource Not Found",
+                        exception.getMessage(),
                         Instant.now()
                 ));
     }
