@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException exception,
             WebRequest request
     ) {
-        ValidationErrorResponse body = new ValidationErrorResponse(
+        ValidationErrorResponse errorResponse = new ValidationErrorResponse(
                 request.getDescription(false).replace("uri=", ""),
                 HttpStatus.UNPROCESSABLE_ENTITY.value(),
                 "Validation Failed",
@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(body);
+                .body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
@@ -45,15 +45,17 @@ public class GlobalExceptionHandler {
             Exception exception,
             WebRequest request
     ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                request.getDescription(false).replace("uri=", ""),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "An unexpected error occurred.",
+                Instant.now()
+        );
+
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(
-                        request.getDescription(false).replace("uri=", ""),
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Internal Server Error",
-                        "An unexpected error occurred.",
-                        Instant.now()
-                ));
+                .body(errorResponse);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -61,15 +63,17 @@ public class GlobalExceptionHandler {
             ResourceNotFoundException exception,
             WebRequest request
     ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                request.getDescription(false).replace("uri=", ""),
+                HttpStatus.NOT_FOUND.value(),
+                "Resource Not Found",
+                exception.getMessage(),
+                Instant.now()
+        );
+
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(
-                        request.getDescription(false).replace("uri=", ""),
-                        HttpStatus.NOT_FOUND.value(),
-                        "Resource Not Found",
-                        exception.getMessage(),
-                        Instant.now()
-                ));
+                .body(errorResponse);
     }
 
     @ExceptionHandler(PollAlreadyStartedException.class)
@@ -77,15 +81,18 @@ public class GlobalExceptionHandler {
             PollAlreadyStartedException exception,
             WebRequest request
     ) {
+        ErrorResponse errorResponse =  new ErrorResponse(
+                request.getDescription(false).replace("uri=", ""),
+                HttpStatus.BAD_REQUEST.value(),
+                "Poll Already Started",
+                exception.getMessage(),
+                Instant.now()
+        );
+
+
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse(
-                        request.getDescription(false).replace("uri=", ""),
-                        HttpStatus.CONFLICT.value(),
-                        "Poll Already Started",
-                        exception.getMessage(),
-                        Instant.now()
-                ));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
     }
 
     @ExceptionHandler(InvalidPollDateException.class)
@@ -93,14 +100,16 @@ public class GlobalExceptionHandler {
             InvalidPollDateException exception,
             WebRequest request
     ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                request.getDescription(false).replace("uri=", ""),
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid Poll Date",
+                exception.getMessage(),
+                Instant.now()
+        );
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(
-                        request.getDescription(false).replace("uri=", ""),
-                        HttpStatus.BAD_REQUEST.value(),
-                        "Invalid Poll Date",
-                        exception.getMessage(),
-                        Instant.now()
-                ));
+                .body(errorResponse);
     }
 }
