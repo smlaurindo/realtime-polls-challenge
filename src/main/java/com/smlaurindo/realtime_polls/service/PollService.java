@@ -139,6 +139,29 @@ public class PollService {
     }
 
     @Transactional
+    public AddPollOptionResponse addPollOption(String pollId, AddPollOptionRequest request) {
+        var poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll with id " + pollId + " does not exist."));
+
+        if (poll.getStatus() != PollStatus.NOT_STARTED) {
+            throw new PollAlreadyStartedException("Options cannot be added after the poll has started.");
+        }
+
+        var option = Option.builder()
+                .text(request.text())
+                .poll(poll)
+                .build();
+
+        optionRepository.save(option);
+
+        return new AddPollOptionResponse(
+                option.getId(),
+                option.getText(),
+                option.getVotes()
+        );
+    }
+
+    @Transactional
     public void deletePoll(String pollId) {
         var pollToDelete = pollRepository.existsById(pollId);
 
