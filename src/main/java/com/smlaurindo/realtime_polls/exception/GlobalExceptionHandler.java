@@ -95,6 +95,25 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    @ExceptionHandler(MinimumPollOptionsException.class)
+    public ResponseEntity<ErrorResponse> handleMinimumPollOptionsException(
+            MinimumPollOptionsException exception,
+            WebRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                request.getDescription(false).replace("uri=", ""),
+                HttpStatus.BAD_REQUEST.value(),
+                "Minimum Poll Options Violation",
+                exception.getMessage(),
+                Instant.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
+
     @ExceptionHandler(InvalidPollDateException.class)
     public ResponseEntity<ErrorResponse> handleInvalidPollDateException(
             InvalidPollDateException exception,

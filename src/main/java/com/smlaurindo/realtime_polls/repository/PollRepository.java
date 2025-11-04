@@ -3,15 +3,22 @@ package com.smlaurindo.realtime_polls.repository;
 import com.smlaurindo.realtime_polls.domain.Poll;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
+
 @Repository
 public interface PollRepository extends JpaRepository<Poll, String> {
+
+    @Lock(PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Poll p WHERE p.id = :pollId")
+    Optional<Poll> findByIdWithLock(@Param("pollId") String pollId);
 
     @Query("""
         SELECT p FROM Poll p

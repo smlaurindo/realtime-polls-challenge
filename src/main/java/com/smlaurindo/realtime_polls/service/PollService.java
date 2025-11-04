@@ -5,6 +5,7 @@ import com.smlaurindo.realtime_polls.domain.Poll;
 import com.smlaurindo.realtime_polls.domain.PollStatus;
 import com.smlaurindo.realtime_polls.dto.*;
 import com.smlaurindo.realtime_polls.exception.InvalidPollDateException;
+import com.smlaurindo.realtime_polls.exception.MinimumPollOptionsException;
 import com.smlaurindo.realtime_polls.exception.PollAlreadyStartedException;
 import com.smlaurindo.realtime_polls.exception.ResourceNotFoundException;
 import com.smlaurindo.realtime_polls.repository.OptionRepository;
@@ -170,5 +171,30 @@ public class PollService {
         }
 
         pollRepository.deleteById(pollId);
+    }
+
+    @Transactional
+    public void deletePollOption(String pollId, String optionId) {
+        var poll = pollRepository.findByIdWithLock(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll with id " + pollId + " does not exist."));
+
+        if (poll.getStatus() != PollStatus.NOT_STARTED) {
+            throw new PollAlreadyStartedException("Options cannot be deleted after the poll has started.");
+        }
+
+        int pollOptionsCount = optionRepository.countByPollId(pollId);
+
+        if (pollOptionsCount <= 3) {
+            throw new MinimumPollOptionsException("A poll must have at least three options.");
+        }
+
+        var option = optionRepository.findById(optionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Option with id " + optionId + " does not exist."));
+
+        if (!option.getPoll().getId().equals(pollId)) {
+            throw new ResourceNotFoundException("Option with id " + optionId + " does not belong to poll with id " + pollId + ".");
+        }
+
+        optionRepository.deleteById(optionId);
     }
 }

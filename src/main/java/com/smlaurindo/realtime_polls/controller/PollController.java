@@ -61,6 +61,16 @@ public class PollController {
         return ResponseEntity.status(HttpStatus.CREATED).body(pollOption);
     }
 
+    @DeleteMapping("/polls/{pollId}/options/{optionId}")
+    public ResponseEntity<Void> deletePollOption(
+            @PathVariable("pollId") String pollId,
+            @PathVariable("optionId") String optionId
+    ) {
+        pollService.deletePollOption(pollId, optionId);
+
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/polls/{pollId}")
     public ResponseEntity<Void> deletePoll(@PathVariable("pollId") String pollId) {
         pollService.deletePoll(pollId);
