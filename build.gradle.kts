@@ -6,7 +6,7 @@ plugins {
 
 group = "com.smlaurindo"
 version = "0.0.1-SNAPSHOT"
-description = "Realtime polling system with Spring Boot and WebSocket/STOMP"
+description = "Realtime polling system with Spring Boot and WebSocket"
 
 java {
 	toolchain {
@@ -32,11 +32,22 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-websocket")
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-database-postgresql")
-	compileOnly("org.projectlombok:lombok")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
+
 	runtimeOnly("org.postgresql:postgresql")
+
+	compileOnly("org.projectlombok:lombok")
+
 	annotationProcessor("org.projectlombok:lombok")
+
+	developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework:spring-webflux")
+	testImplementation("org.springframework.boot:spring-boot-testcontainers")
+	testImplementation("org.testcontainers:junit-jupiter")
+	testImplementation("org.testcontainers:postgresql")
+
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

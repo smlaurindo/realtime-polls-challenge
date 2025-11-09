@@ -1,26 +1,24 @@
 server:
-  port: ${SERVER_PORT}
+  port: 0
   error:
     whitelabel:
       enabled: false
+
 spring:
   application:
-    name: realtime-polls
+    name: realtime-polls-test
   threads:
     virtual:
       enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT}/${POSTGRES_DB}
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:tc:postgresql:17:///testdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
   jpa:
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
-        show_sql: true
-        format_sql: true
+        show_sql: false
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -34,5 +32,5 @@ spring:
 app:
   cors:
     allowed:
-      origins: ${CORS_ALLOWED_ORIGINS}
-      methods: GET,POST,PUT,DELETE,OPTIONS
+      origins: "*"
+      methods: "GET,POST,PUT,DELETE,OPTIONS"
