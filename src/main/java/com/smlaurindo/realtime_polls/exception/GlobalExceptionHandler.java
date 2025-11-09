@@ -113,6 +113,23 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    @ExceptionHandler(PollNotInProgressException.class)
+    public ResponseEntity<ErrorResponse> handlePollNotInProgressException(
+            PollNotInProgressException exception,
+            WebRequest request
+    ) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                request.getDescription(false).replace("uri=", ""),
+                HttpStatus.BAD_REQUEST.value(),
+                "Poll Not In Progress",
+                exception.getMessage(),
+                Instant.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
 
     @ExceptionHandler(InvalidPollDateException.class)
     public ResponseEntity<ErrorResponse> handleInvalidPollDateException(

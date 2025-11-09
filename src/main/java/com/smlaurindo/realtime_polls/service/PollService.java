@@ -4,18 +4,18 @@ import com.smlaurindo.realtime_polls.domain.Option;
 import com.smlaurindo.realtime_polls.domain.Poll;
 import com.smlaurindo.realtime_polls.domain.PollStatus;
 import com.smlaurindo.realtime_polls.dto.*;
-import com.smlaurindo.realtime_polls.exception.InvalidPollDateException;
-import com.smlaurindo.realtime_polls.exception.MinimumPollOptionsException;
-import com.smlaurindo.realtime_polls.exception.PollAlreadyStartedException;
-import com.smlaurindo.realtime_polls.exception.ResourceNotFoundException;
+import com.smlaurindo.realtime_polls.event.PollOptionVotedEvent;
+import com.smlaurindo.realtime_polls.exception.*;
 import com.smlaurindo.realtime_polls.repository.OptionRepository;
 import com.smlaurindo.realtime_polls.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,6 +26,7 @@ public class PollService {
 
     private final PollRepository pollRepository;
     private final OptionRepository optionRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CreatePollResponse createPoll(CreatePollRequest request) {
@@ -196,5 +197,26 @@ public class PollService {
         }
 
         optionRepository.deleteById(optionId);
+    }
+
+    @Transactional
+    public void votePollOption(String pollId, String optionId) {
+        var poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll with id " + pollId + " does not exist."));
+
+        if (poll.getStatus() != PollStatus.IN_PROGRESS) {
+            throw new PollNotInProgressException("Votes can only be cast on polls that are in progress.");
+        }
+
+        var option = optionRepository.findById(optionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Option with id " + optionId + " does not exist."));
+
+        if (!option.getPoll().getId().equals(pollId)) {
+            throw new ResourceNotFoundException("Option with id " + optionId + " does not belong to poll with id " + pollId + ".");
+        }
+
+        optionRepository.incrementVotes(optionId);
+
+        eventPublisher.publishEvent(new PollOptionVotedEvent(this, pollId, optionId, Instant.now()));
     }
 }
