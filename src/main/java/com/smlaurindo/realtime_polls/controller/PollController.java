@@ -5,7 +5,6 @@ import com.smlaurindo.realtime_polls.dto.*;
 import com.smlaurindo.realtime_polls.service.PollService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -31,7 +30,7 @@ public class PollController {
     }
 
     @GetMapping("/polls")
-    public ResponseEntity<Page<ListPollsResponse>> listPolls(
+    public ResponseEntity<PageResponse<ListPollsResponse>> listPolls(
             @RequestParam(required = false) PollStatus status,
             @PageableDefault(size = 20, sort = "startsAt", direction = Sort.Direction.DESC)
             Pageable pageable

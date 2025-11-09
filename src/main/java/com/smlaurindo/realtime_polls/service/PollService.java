@@ -66,7 +66,7 @@ public class PollService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ListPollsResponse> listPolls(PollStatus status, Pageable pageable) {
+    public PageResponse<ListPollsResponse> listPolls(PollStatus status, Pageable pageable) {
         Page<Poll> pollPage = switch (status) {
             case NOT_STARTED -> pollRepository.findAllNotStarted(pageable);
             case IN_PROGRESS -> pollRepository.findAllInProgress(pageable);
@@ -83,7 +83,7 @@ public class PollService {
         Map<String, List<Option>> optionsByPollId = options.stream()
                 .collect(Collectors.groupingBy(option -> option.getPoll().getId()));
 
-        return pollPage.map((poll) -> new ListPollsResponse(
+        var page = pollPage.map((poll) -> new ListPollsResponse(
                 poll.getId(),
                 poll.getQuestion(),
                 poll.getStatus(),
@@ -98,6 +98,8 @@ public class PollService {
                         ))
                         .toList()
         ));
+
+        return PageResponse.of(page);
     }
 
     @Transactional
