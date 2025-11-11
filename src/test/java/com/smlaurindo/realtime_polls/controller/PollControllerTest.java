@@ -28,7 +28,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.IntStream;
 
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.*;
@@ -714,11 +716,21 @@ class PollControllerTest {
 
             var uri = apiPath.formatted(activePoll.getId(), option.getId());
 
-            for (int i = 0; i < 50; i++) {
-                webTestClient.patch()
-                        .uri(uri)
-                        .exchange()
-                        .expectStatus().isOk();
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                var futures = IntStream.range(0, 50)
+                        .mapToObj(_ -> executor.submit(() -> {
+                            webTestClient.patch()
+                                    .uri(uri)
+                                    .exchange()
+                                    .expectStatus().isOk();
+                        }))
+                        .toList();
+
+                for (var future : futures) {
+                    future.get();
+                }
+            } catch (Exception e) {
+                fail("Exception during voting: " + e.getMessage());
             }
 
             Option updatedOption = optionRepository.findById(option.getId()).orElseThrow();
