@@ -31,6 +31,24 @@ spring:
         default-page-size: 20
         max-page-size: 100
 
+springdoc:
+  swagger-ui:
+    enabled: true
+    urls:
+      - name: "English"
+        url: "/openapi-en.yaml"
+      - name: "Português (Brasil)"
+        url: "/openapi-pt.yaml"
+    syntax-highlight:
+      theme: "obsidian"
+      activated: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  writer-with-default-pretty-printer: true
+
+
+
+
 app:
   cors:
     allowed:

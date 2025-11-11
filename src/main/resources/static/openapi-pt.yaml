@@ -1,0 +1,822 @@
+openapi: 3.1.0
+info:
+  title: Realtime Polls API
+  description: |
+    API para gerenciamento de enquetes em tempo real com suporte a WebSocket.
+
+    ## Funcionalidades
+    - Criar e gerenciar enquetes
+    - Adicionar e remover opções de enquete
+    - Votação em tempo real
+    - Paginação e filtros
+    - Atualizações via WebSocket
+
+    ## Autenticação
+    Esta API não requer autenticação.
+
+    ## WebSocket
+    Para receber atualizações em tempo real, conecte-se ao endpoint WebSocket em `/ws/polls/{pollId}`.
+  contact:
+    name: Samuel Laurindo
+    email: contato.samuellaurindo@gmail.com
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:{port}'
+    description: Servidor de Desenvolvimento Local
+    variables:
+      port:
+        default: '8080'
+        descriptions: Porta do servidor
+tags:
+  - name: Polls
+    description: Operações relacionadas a enquetes
+paths:
+  /polls:
+    get:
+      tags:
+        - Polls
+      summary: Paginar enquetes
+      description: Retorna uma lista paginada de enquetes.
+      operationId: listPolls
+      parameters:
+        - name: status
+          in: query
+          description: Status da enquete
+          required: false
+          schema:
+            type: string
+            enum:
+              - NOT_STARTED
+              - IN_PROGRESS
+              - FINISHED
+        - name: page
+          in: query
+          description: Número da página (baseado em zero)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - name: size
+          in: query
+          description: Tamanho máximo da página
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          description: "Critérios de ordenação no formato: `propriedade,(asc|desc)`. Múltiplos critérios podem ser fornecidos."
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              example:
+                - startsAt,asc
+                - question,desc
+      responses:
+        200:
+          description: Lista de enquetes retornada com sucesso
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PageResponse"
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+                example:
+                  apiPath: "/polls"
+                  statusCode: 500
+                  error: Internal Server Error
+                  details: An unexpected error occurred
+                  timestamp: '2025-11-09T10:30:00Z'
+    post:
+      tags:
+        - Polls
+      summary: Criar uma nova enquete
+      description: Cria uma nova enquete com pelo menos 3 opções.
+      operationId: createPoll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreatePollRequest"
+        required: true
+      responses:
+        201:
+          description: Enquete criada com sucesso
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CreatePollResponse"
+        422:
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              example:
+                apiPath: "/polls"
+                statusCode: 422
+                title: Validation Failed
+                details: Request validation failed
+                errors:
+                  question: The question cannot be blank
+                  startsAt: The poll cannot start in the past
+                  endsAt: The poll cannot end in the past
+                  options: The poll must have at least 3 options
+                timestamp: '2025-11-09T10:30:00Z'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              example:
+                apiPath: "/polls"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred
+                timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}:
+    put:
+      tags:
+        - Polls
+      summary: Editar uma enquete
+      description: Atualiza as informações de uma enquete existente. Não é possível editar enquetes que já iniciaram.
+      operationId: editPoll
+      parameters:
+        - name: pollId
+          in: path
+          description: Id da enquete
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/EditPollRequest"
+        required: true
+      responses:
+        200:
+          description: Enquete atualizada com sucesso
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EditPollResponse"
+        400:
+          description: Erro lançado após tentativa de editar uma enquete que já iniciou ou que a data de término seja anterior à data de início
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidPollDate:
+                  summary: "Data de término anterior à data de início"
+                  value:
+                    apiPath: "/polls/{pollId}"
+                    statusCode: 400
+                    title: Invalid Poll Date
+                    details: The end date must be after the start date.
+                    timestamp: '2025-11-09T10:30:00Z'
+                PollAlreadyStarted:
+                  summary: "Enquete já iniciada"
+                  value:
+                    apiPath: "/polls/{pollId}"
+                    statusCode: 400
+                    title: Poll Already Started
+                    details: Poll cannot be edited after it has started.
+                    timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Enquete não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        422:
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 422
+                title: Validation Failed
+                details: Request validation failed
+                errors:
+                  question: The question cannot be longer than 2000 characters
+                  startsAt: The poll cannot start in the past
+                  endsAt: The poll cannot end in the past
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+    delete:
+      tags:
+        - Polls
+      summary: Remover uma enquete
+      description: Remove uma enquete existente e todas as suas opções e votos.
+      operationId: deletePoll
+      parameters:
+        - name: pollId
+          in: path
+          description: Id da enquete
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        204:
+          description: Enquete removida com sucesso
+        404:
+          description: Enquete não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}/options:
+    post:
+      tags:
+        - Polls
+      summary: Adicionar opção a uma enquete
+      description: Adiciona uma nova opção a uma enquete existente. Não é possível
+        adicionar opções a enquetes que já iniciaram.
+      operationId: addPollOption
+      parameters:
+        - name: pollId
+          in: path
+          description: Id da enquete
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AddPollOptionRequest"
+        required: true
+      responses:
+        201:
+          description: Opção adicionada com sucesso
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AddPollOptionResponse"
+        400:
+          description: Erro lançado após tentativa de adicionar opção a uma enquete que já iniciou.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options"
+                statusCode: 400
+                title: Poll Already Started
+                details: Options cannot be added after the poll has started.
+                timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Enquete não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        422:
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options"
+                statusCode: 422
+                title: Validation Failed
+                details: Request validation failed
+                errors:
+                  text: The option cannot be blank
+                timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+            schema:
+              "$ref": "#/components/schemas/ErrorResponse"
+            example:
+              apiPath: "/polls/{pollId}/options"
+              statusCode: 500
+              error: Internal Server Error
+              details: An unexpected error occurred.
+              timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}/options/{optionId}/vote:
+    patch:
+      tags:
+        - Polls
+      summary: Votar em uma opção
+      description: Registra um voto em uma opção de enquete. A enquete deve estar ativa para receber votos.
+      operationId: votePollOption
+      parameters:
+        - name: pollId
+          in: path
+          description: Id da enquete
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+        - name: optionId
+          in: path
+          description: Id da opção
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        200:
+          description: Voto registrado com sucesso
+        400:
+          description: Enquete não está ativa para votação
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                statusCode: 400
+                title: Poll Not Active
+                details: Votes can only be cast on polls that are in progress.
+                timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Enquete ou opção não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              examples:
+                PollNotFound:
+                  summary: "Enquete não encontrada"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Poll with id {pollId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotFound:
+                  summary: "Opção não encontrada"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotBelongsToPoll:
+                  summary: "Opção encotrada não pertence à enquete"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not belong to poll with id {pollId}.
+                    timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}/options/{optionId}:
+    delete:
+      tags:
+        - Polls
+      summary: Remover uma opção de enquete
+      description: Remove uma opção de uma enquete existente. Não é possível remover
+        opções de enquetes que já iniciaram ou se restar menos de 3 opções.
+      operationId: deletePollOption
+      parameters:
+        - name: pollId
+          in: path
+          description: Id da enquete
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+        - name: optionId
+          in: path
+          description: Id da opção
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        204:
+          description: Opção removida com sucesso
+        400:
+          description: Não é possível remover a opção
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              examples:
+                PollAlreadyStarted:
+                  summary: "Enquete já iniciada"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 400
+                    title: Poll Already Started
+                    details: Options cannot be deleted after the poll has started.
+                    timestamp: '2025-11-09T10:30:00Z'
+                MinimumPollOptions:
+                  summary: "Número mínimo de opções"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 400
+                    title: Minimum Poll Options Violation
+                    details: A poll must have at least three options.
+                    timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Enquete ou opção não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              examples:
+                PollNotFound:
+                  summary: "Enquete não encontrada"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Poll with id {pollId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotFound:
+                  summary: "Opção não encontrada"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotBelongsToPoll:
+                  summary: "Opção encotrada não pertence à enquete"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not belong to poll with id {pollId}.
+                    timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options/{optionId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+components:
+  schemas:
+    Option:
+      type: object
+      description: Opção de enquete
+      properties:
+        id:
+          type: string
+          description: ID único da opção
+          example: 660e8400-e29b-41d4-a716-446655440001
+        text:
+          type: string
+          description: Texto da opção
+          example: Java
+        votes:
+          type: integer
+          format: int32
+          description: Número de votos
+          example: 0
+    Poll:
+      type: object
+      description: Enquete completa
+      properties:
+        id:
+          type: string
+          description: UUID único da enquete
+          example: 550e8400-e29b-41d4-a716-446655440000
+        question:
+          type: string
+          description: Pergunta da enquete
+          example: Qual é a sua linguagem de programação favorita?
+        status:
+          type: string
+          description: Status atual da enquete
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - FINISHED
+          example: NOT_STARTED
+        startsAt:
+          type: string
+          description: Data e hora de início da enquete (ISO 8601)
+          example: '2025-11-10T10:00:00Z'
+        endsAt:
+          type: string
+          description: Data e hora de término da enquete (ISO 8601)
+          example: '2025-11-17T10:00:00Z'
+        options:
+          type: array
+          description: Lista de opções da enquete
+          items:
+            "$ref": "#/components/schemas/Option"
+    PageResponse:
+      type: object
+      description: Response paginada contendo lista de elementos
+      properties:
+        content:
+          type: array
+          description: Lista de elementos da página atual
+          items:
+            $ref: "#/components/schemas/Poll"
+        page:
+          type: integer
+          format: int32
+          description: Número da página atual (baseado em zero)
+        pageSize:
+          type: integer
+          format: int32
+          description: Tamanho da página
+        pageLength:
+          type: integer
+          format: int64
+          description: Quantidade de elementos na página atual
+        totalPages:
+          type: integer
+          format: int32
+          description: Número total de páginas
+        totalElements:
+          type: integer
+          format: int64
+          description: Número total de elementos
+        hasNext:
+          type: boolean
+          description: Indica se há próxima página
+        hasPrevious:
+          type: boolean
+          description: Indica se há página anterior
+    EditPollRequest:
+      type: object
+      description: Request para editar uma enquete existente
+      properties:
+        question:
+          type: string
+          description: Nova pergunta da enquete
+          example: Qual é a sua linguagem de programação favorita em 2025?
+          maxLength: 2000
+          minLength: 1
+        startsAt:
+          type: string
+          format: date-time
+          description: Nova data e hora de início da enquete (ISO 8601)
+          example: '2025-11-12T10:00:00Z'
+        endsAt:
+          type: string
+          format: date-time
+          description: Nova data e hora de término da enquete (ISO 8601)
+          example: '2025-11-19T10:00:00Z'
+    EditPollResponse:
+      type: object
+      description: Response contendo os dados da enquete editada
+      properties:
+        id:
+          type: string
+          description: ID único da enquete
+          example: 550e8400-e29b-41d4-a716-446655440000
+        question:
+          type: string
+          description: Pergunta da enquete
+          example: Qual é a sua linguagem de programação favorita em 2025?
+        status:
+          type: string
+          description: Status atual da enquete
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - FINISHED
+          example: NOT_STARTED
+        startsAt:
+          type: string
+          description: Data e hora de início da enquete (ISO 8601)
+          example: '2025-11-12T10:00:00Z'
+        endsAt:
+          type: string
+          description: Data e hora de término da enquete (ISO 8601)
+          example: '2025-11-19T10:00:00Z'
+        options:
+          type: array
+          description: Lista de opções da enquete
+          items:
+            "$ref": "#/components/schemas/Option"
+    ErrorResponse:
+      type: object
+      description: Response de erro padrão da API
+      properties:
+        apiPath:
+          type: string
+          description: Caminho da API que gerou o erro
+        statusCode:
+          type: integer
+          format: int32
+          description: Código de status HTTP
+        title:
+          type: string
+          description: Título do erro
+        details:
+          type: string
+          description: Detalhes do erro
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp do erro (ISO 8601)
+    ValidationErrorResponse:
+      type: object
+      description: Response de erro de validação
+      properties:
+        apiPath:
+          type: string
+          description: Caminho da API que gerou o erro
+          example: "/polls"
+        statusCode:
+          type: integer
+          format: int32
+          description: Código de status HTTP
+          example: 422
+        title:
+          type: string
+          description: Título do erro
+          example: Validation Failed
+        details:
+          type: string
+          description: Detalhes do erro
+          example: Request validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          description: Mapa de erros por campo
+          example:
+            question: The question cannot be blank
+            options: The poll must have at least 3 options
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp do erro (ISO 8601)
+          example: '2025-11-09T10:30:00Z'
+    CreatePollRequest:
+      type: object
+      description: Request para criar uma nova enquete
+      properties:
+        question:
+          type: string
+          description: Pergunta da enquete
+          example: Qual é a sua linguagem de programação favorita?
+          maxLength: 2000
+          minLength: 1
+        startsAt:
+          type: string
+          format: date-time
+          description: Data e hora de início da enquete (ISO 8601)
+          example: '2025-11-10T10:00:00Z'
+        endsAt:
+          type: string
+          format: date-time
+          description: Data e hora de término da enquete (ISO 8601)
+          example: '2025-11-17T10:00:00Z'
+        options:
+          type: array
+          description: Lista de opções da enquete (mínimo 3)
+          example:
+            - Java
+            - C#
+            - Go
+          items:
+            type: string
+            minLength: 1
+          maxItems: 2147483647
+          minItems: 3
+      required:
+        - question
+        - startsAt
+        - endsAt
+        - options
+    CreatePollResponse:
+      type: object
+      description: Response contendo os dados da enquete criada
+      properties:
+        id:
+          type: string
+          description: ID único da enquete
+          example: 550e8400-e29b-41d4-a716-446655440000
+        question:
+          type: string
+          description: Pergunta da enquete
+          example: Qual é a sua linguagem de programação favorita?
+        status:
+          type: string
+          description: Status atual da enquete
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - FINISHED
+          example: NOT_STARTED
+        startsAt:
+          type: string
+          description: Data e hora de início da enquete (ISO 8601)
+          example: '2025-11-10T10:00:00Z'
+        endsAt:
+          type: string
+          description: Data e hora de término da enquete (ISO 8601)
+          example: '2025-11-17T10:00:00Z'
+        options:
+          type: array
+          description: Lista de opções da enquete
+          items:
+            "$ref": "#/components/schemas/Option"
+    AddPollOptionRequest:
+      type: object
+      description: Request para adicionar uma nova opção a uma enquete
+      properties:
+        text:
+          type: string
+          description: Texto da nova opção
+          example: TypeScript
+          minLength: 1
+      required:
+        - text
+    AddPollOptionResponse:
+      type: object
+      description: Response contendo os dados da opção adicionada
+      properties:
+        id:
+          type: string
+          description: ID único da opção
+          example: 660e8400-e29b-41d4-a716-446655440001
+        text:
+          type: string
+          description: Texto da opção
+          example: TypeScript
+        votes:
+          type: integer
+          format: int32
+          description: Número de votos
+          example: 0

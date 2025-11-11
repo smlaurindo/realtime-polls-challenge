@@ -1,0 +1,820 @@
+openapi: 3.1.0
+info:
+  title: Realtime Polls API
+  description: |
+    API for real-time poll management with WebSocket support.
+
+    ## Features
+    - Create and manage polls
+    - Add and remove poll options
+    - Real-time voting
+    - Pagination and filters
+    - Updates via WebSocket
+
+    ## Authentication
+    This API does not require authentication.
+
+    ## WebSocket
+    To receive real-time updates, connect to the WebSocket endpoint at `/ws/polls/{pollId}`.
+  contact:
+    name: Samuel Laurindo
+    email: contato.samuellaurindo@gmail.com
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:{port}'
+    description: Local Development Server
+    variables:
+      port:
+        default: '8080'
+        descriptions: Server port
+tags:
+  - name: Polls
+    description: Operations related to polls
+paths:
+  /polls:
+    get:
+      tags:
+        - Polls
+      summary: Paginate polls
+      description: Returns a paginated list of polls.
+      operationId: listPolls
+      parameters:
+        - name: status
+          in: query
+          description: Poll status
+          required: false
+          schema:
+            type: string
+            enum:
+              - NOT_STARTED
+              - IN_PROGRESS
+              - FINISHED
+        - name: page
+          in: query
+          description: Page number (zero-based)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - name: size
+          in: query
+          description: Maximum page size
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+        - name: sort
+          in: query
+          description: "Sorting criteria in the format: `property,(asc|desc)`. Multiple criteria can be provided."
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              example:
+                - startsAt,asc
+                - question,desc
+      responses:
+        200:
+          description: Poll list returned successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/PageResponse"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+                example:
+                  apiPath: "/polls"
+                  statusCode: 500
+                  error: Internal Server Error
+                  details: An unexpected error occurred
+                  timestamp: '2025-11-09T10:30:00Z'
+    post:
+      tags:
+        - Polls
+      summary: Create a new poll
+      description: Creates a new poll with at least 3 options.
+      operationId: createPoll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreatePollRequest"
+        required: true
+      responses:
+        201:
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CreatePollResponse"
+        422:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              example:
+                apiPath: "/polls"
+                statusCode: 422
+                title: Validation Failed
+                details: Request validation failed
+                errors:
+                  question: The question cannot be blank
+                  startsAt: The poll cannot start in the past
+                  endsAt: The poll cannot end in the past
+                  options: The poll must have at least 3 options
+                timestamp: '2025-11-09T10:30:00Z'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              example:
+                apiPath: "/polls"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred
+                timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}:
+    put:
+      tags:
+        - Polls
+      summary: Edit a poll
+      description: Updates the information of an existing poll. Polls that have already started cannot be edited.
+      operationId: editPoll
+      parameters:
+        - name: pollId
+          in: path
+          description: Poll ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/EditPollRequest"
+        required: true
+      responses:
+        200:
+          description: Poll updated successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/EditPollResponse"
+        400:
+          description: Error thrown when trying to edit a poll that has already started or the end date is before the start date
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidPollDate:
+                  summary: "End date before start date"
+                  value:
+                    apiPath: "/polls/{pollId}"
+                    statusCode: 400
+                    title: Invalid Poll Date
+                    details: The end date must be after the start date.
+                    timestamp: '2025-11-09T10:30:00Z'
+                PollAlreadyStarted:
+                  summary: "Poll already started"
+                  value:
+                    apiPath: "/polls/{pollId}"
+                    statusCode: 400
+                    title: Poll Already Started
+                    details: Poll cannot be edited after it has started.
+                    timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        422:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 422
+                title: Validation Failed
+                details: Request validation failed
+                errors:
+                  question: The question cannot be longer than 2000 characters
+                  startsAt: The poll cannot start in the past
+                  endsAt: The poll cannot end in the past
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+    delete:
+      tags:
+        - Polls
+      summary: Remove a poll
+      description: Removes an existing poll and all its options and votes.
+      operationId: deletePoll
+      parameters:
+        - name: pollId
+          in: path
+          description: Poll ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        204:
+          description: Poll removed successfully
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}/options:
+    post:
+      tags:
+        - Polls
+      summary: Add option to a poll
+      description: Adds a new option to an existing poll. Options cannot be added to polls that have already started.
+      operationId: addPollOption
+      parameters:
+        - name: pollId
+          in: path
+          description: Poll ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/AddPollOptionRequest"
+        required: true
+      responses:
+        201:
+          description: Option added successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/AddPollOptionResponse"
+        400:
+          description: Error thrown when trying to add an option to a poll that has already started.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options"
+                statusCode: 400
+                title: Poll Already Started
+                details: Options cannot be added after the poll has started.
+                timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        422:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ValidationErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options"
+                statusCode: 422
+                title: Validation Failed
+                details: Request validation failed
+                errors:
+                  text: The option cannot be blank
+                timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+            schema:
+              "$ref": "#/components/schemas/ErrorResponse"
+            example:
+              apiPath: "/polls/{pollId}/options"
+              statusCode: 500
+              error: Internal Server Error
+              details: An unexpected error occurred.
+              timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}/options/{optionId}/vote:
+    patch:
+      tags:
+        - Polls
+      summary: Vote for an option
+      description: Registers a vote for a poll option. The poll must be active to receive votes.
+      operationId: votePollOption
+      parameters:
+        - name: pollId
+          in: path
+          description: Poll ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+        - name: optionId
+          in: path
+          description: Option ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        200:
+          description: Vote registered successfully
+        400:
+          description: Poll is not active for voting
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                statusCode: 400
+                title: Poll Not Active
+                details: Votes can only be cast on polls that are in progress.
+                timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Poll or option not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              examples:
+                PollNotFound:
+                  summary: "Poll not found"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Poll with id {pollId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotFound:
+                  summary: "Option not found"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotBelongsToPoll:
+                  summary: "Option found does not belong to poll"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not belong to poll with id {pollId}.
+                    timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options/{optionId}/vote"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+  /polls/{pollId}/options/{optionId}:
+    delete:
+      tags:
+        - Polls
+      summary: Remove a poll option
+      description: Removes an option from an existing poll. Options cannot be removed from polls that have already started or if less than 3 options remain.
+      operationId: deletePollOption
+      parameters:
+        - name: pollId
+          in: path
+          description: Poll ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+        - name: optionId
+          in: path
+          description: Option ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        204:
+          description: Option removed successfully
+        400:
+          description: Option cannot be removed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              examples:
+                PollAlreadyStarted:
+                  summary: "Poll already started"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 400
+                    title: Poll Already Started
+                    details: Options cannot be deleted after the poll has started.
+                    timestamp: '2025-11-09T10:30:00Z'
+                MinimumPollOptions:
+                  summary: "Minimum number of options"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 400
+                    title: Minimum Poll Options Violation
+                    details: A poll must have at least three options.
+                    timestamp: '2025-11-09T10:30:00Z'
+        404:
+          description: Poll or option not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              examples:
+                PollNotFound:
+                  summary: "Poll not found"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Poll with id {pollId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotFound:
+                  summary: "Option not found"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not exist.
+                    timestamp: '2025-11-09T10:30:00Z'
+                OptionNotBelongsToPoll:
+                  summary: "Option found does not belong to poll"
+                  value:
+                    apiPath: "/polls/{pollId}/options/{optionId}"
+                    statusCode: 404
+                    title: Resource Not Found
+                    details: Option with id {optionId} does not belong to poll with id {pollId}.
+                    timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}/options/{optionId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
+components:
+  schemas:
+    Option:
+      type: object
+      description: Poll option
+      properties:
+        id:
+          type: string
+          description: Unique option ID
+          example: 660e8400-e29b-41d4-a716-446655440001
+        text:
+          type: string
+          description: Option text
+          example: Java
+        votes:
+          type: integer
+          format: int32
+          description: Number of votes
+          example: 0
+    Poll:
+      type: object
+      description: Complete poll
+      properties:
+        id:
+          type: string
+          description: Unique poll UUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        question:
+          type: string
+          description: Poll question
+          example: What is your favorite programming language?
+        status:
+          type: string
+          description: Current poll status
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - FINISHED
+          example: NOT_STARTED
+        startsAt:
+          type: string
+          description: Poll start date and time (ISO 8601)
+          example: '2025-11-10T10:00:00Z'
+        endsAt:
+          type: string
+          description: Poll end date and time (ISO 8601)
+          example: '2025-11-17T10:00:00Z'
+        options:
+          type: array
+          description: List of poll options
+          items:
+            "$ref": "#/components/schemas/Option"
+    PageResponse:
+      type: object
+      description: Paginated response containing a list of elements
+      properties:
+        content:
+          type: array
+          description: List of elements on the current page
+          items:
+            $ref: "#/components/schemas/Poll"
+        page:
+          type: integer
+          format: int32
+          description: Current page number (zero-based)
+        pageSize:
+          type: integer
+          format: int32
+          description: Page size
+        pageLength:
+          type: integer
+          format: int64
+          description: Number of elements on the current page
+        totalPages:
+          type: integer
+          format: int32
+          description: Total number of pages
+        totalElements:
+          type: integer
+          format: int64
+          description: Total number of elements
+        hasNext:
+          type: boolean
+          description: Indicates if there is a next page
+        hasPrevious:
+          type: boolean
+          description: Indicates if there is a previous page
+    EditPollRequest:
+      type: object
+      description: Request to edit an existing poll
+      properties:
+        question:
+          type: string
+          description: New poll question
+          example: What is your favorite programming language in 2025?
+          maxLength: 2000
+          minLength: 1
+        startsAt:
+          type: string
+          format: date-time
+          description: New poll start date and time (ISO 8601)
+          example: '2025-11-12T10:00:00Z'
+        endsAt:
+          type: string
+          format: date-time
+          description: New poll end date and time (ISO 8601)
+          example: '2025-11-19T10:00:00Z'
+    EditPollResponse:
+      type: object
+      description: Response containing the edited poll data
+      properties:
+        id:
+          type: string
+          description: Unique poll ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        question:
+          type: string
+          description: Poll question
+          example: What is your favorite programming language in 2025?
+        status:
+          type: string
+          description: Current poll status
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - FINISHED
+          example: NOT_STARTED
+        startsAt:
+          type: string
+          description: Poll start date and time (ISO 8601)
+          example: '2025-11-12T10:00:00Z'
+        endsAt:
+          type: string
+          description: Poll end date and time (ISO 8601)
+          example: '2025-11-19T10:00:00Z'
+        options:
+          type: array
+          description: List of poll options
+          items:
+            "$ref": "#/components/schemas/Option"
+    ErrorResponse:
+      type: object
+      description: Standard API error response
+      properties:
+        apiPath:
+          type: string
+          description: API path that generated the error
+        statusCode:
+          type: integer
+          format: int32
+          description: HTTP status code
+        title:
+          type: string
+          description: Error title
+        details:
+          type: string
+          description: Error details
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp (ISO 8601)
+    ValidationErrorResponse:
+      type: object
+      description: Validation error response
+      properties:
+        apiPath:
+          type: string
+          description: API path that generated the error
+          example: "/polls"
+        statusCode:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 422
+        title:
+          type: string
+          description: Error title
+          example: Validation Failed
+        details:
+          type: string
+          description: Error details
+          example: Request validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          description: Map of field errors
+          example:
+            question: The question cannot be blank
+            options: The poll must have at least 3 options
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp (ISO 8601)
+          example: '2025-11-09T10:30:00Z'
+    CreatePollRequest:
+      type: object
+      description: Request to create a new poll
+      properties:
+        question:
+          type: string
+          description: Poll question
+          example: What is your favorite programming language?
+          maxLength: 2000
+          minLength: 1
+        startsAt:
+          type: string
+          format: date-time
+          description: Poll start date and time (ISO 8601)
+          example: '2025-11-10T10:00:00Z'
+        endsAt:
+          type: string
+          format: date-time
+          description: Poll end date and time (ISO 8601)
+          example: '2025-11-17T10:00:00Z'
+        options:
+          type: array
+          description: List of poll options (minimum 3)
+          example:
+            - Java
+            - C#
+            - Go
+          items:
+            type: string
+            minLength: 1
+          maxItems: 2147483647
+          minItems: 3
+      required:
+        - question
+        - startsAt
+        - endsAt
+        - options
+    CreatePollResponse:
+      type: object
+      description: Response containing the created poll data
+      properties:
+        id:
+          type: string
+          description: Unique poll ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        question:
+          type: string
+          description: Poll question
+          example: What is your favorite programming language?
+        status:
+          type: string
+          description: Current poll status
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - FINISHED
+          example: NOT_STARTED
+        startsAt:
+          type: string
+          description: Poll start date and time (ISO 8601)
+          example: '2025-11-10T10:00:00Z'
+        endsAt:
+          type: string
+          description: Poll end date and time (ISO 8601)
+          example: '2025-11-17T10:00:00Z'
+        options:
+          type: array
+          description: List of poll options
+          items:
+            "$ref": "#/components/schemas/Option"
+    AddPollOptionRequest:
+      type: object
+      description: Request to add a new option to a poll
+      properties:
+        text:
+          type: string
+          description: New option text
+          example: TypeScript
+          minLength: 1
+      required:
+        - text
+    AddPollOptionResponse:
+      type: object
+      description: Response containing the added option data
+      properties:
+        id:
+          type: string
+          description: Unique option ID
+          example: 660e8400-e29b-41d4-a716-446655440001
+        text:
+          type: string
+          description: Option text
+          example: TypeScript
+        votes:
+          type: integer
+          format: int32
+          description: Number of votes
+          example: 0

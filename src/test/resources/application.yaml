@@ -28,7 +28,11 @@ spring:
       pageable:
         default-page-size: 20
         max-page-size: 100
-
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 app:
   cors:
     allowed:
