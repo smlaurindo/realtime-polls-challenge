@@ -898,8 +898,8 @@ class PollControllerTest {
     }
 
     @Nested
-    @DisplayName("Integration Tests - Full Poll Lifecycle")
-    class IntegrationTests {
+    @DisplayName("Full Poll Lifecycle Tests")
+    class FullPollLifecycleTests {
 
         @Test
         @DisplayName("Should complete full poll lifecycle")
