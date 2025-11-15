@@ -5,7 +5,7 @@
 > I did not participate in any selection process related to it.  
 > Original source: [LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7387095489164492800/)
 
-> **🇧🇷 Leia a versão em Português aqui: [README_pt-br.md](./docs/README_pt-br.md)**
+**🇧🇷 Leia a versão em Português aqui: [README_pt-br.md](./docs/README_pt-br.md)**
 
 ## About the Project
 
