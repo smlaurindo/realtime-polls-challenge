@@ -21,7 +21,7 @@ public class PollOptionVotedEventListener {
     private final OptionRepository optionRepository;
 
     @Async
-    @Transactional(propagation = REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW, readOnly = true)
     @TransactionalEventListener
     public void onPollOptionVoted(PollOptionVotedEvent event) {
         var option = optionRepository.findById(event.getOptionId())
