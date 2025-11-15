@@ -3,7 +3,7 @@
 > [!IMPORTANT]  
 > This challenge was taken from a public post on LinkedIn and is here for reference only.  
 > I did not participate in any selection process related to it.  
-> Source: https://www.linkedin.com/feed/update/urn:li:activity:7387095489164492800/
+> Source: [LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7387095489164492800/)
 
 ## 🎯 Objective
 

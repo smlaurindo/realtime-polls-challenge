@@ -3,7 +3,7 @@
 > [!IMPORTANT]  
 > Este desafio foi retirado de um post público no LinkedIn e está aqui apenas como referência.  
 > Não participei de nenhum processo seletivo relacionado a ele.  
-> Fonte: https://www.linkedin.com/feed/update/urn:li:activity:7387095489164492800/
+> Fonte: [LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7387095489164492800/)
 
 ## 🎯 Objetivo
 
