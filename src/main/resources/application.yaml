@@ -46,9 +46,6 @@ springdoc:
   default-produces-media-type: application/json
   writer-with-default-pretty-printer: true
 
-
-
-
 app:
   cors:
     allowed:
