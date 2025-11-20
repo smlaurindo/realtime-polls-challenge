@@ -526,6 +526,11 @@ Os testes foram implementados usando as seguintes tecnologias:
 - **Listar** todas as enquetes filtrando por status `IN_PROGRESS`
 - **Listar** todas as enquetes filtrando por status `FINISHED`
 
+#### Obtenção de Enquete (`GetPollTests`)
+
+- **Obter** enquete existente
+- **Falhar** ao tentar obter enquete inexistente
+
 #### Edição de Enquetes (`EditPollTests`)
 
 - **Editar** enquete não iniciada

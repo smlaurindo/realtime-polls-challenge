@@ -528,6 +528,11 @@ Tests were implemented using the following technologies:
 - **List** all polls filtering by status `IN_PROGRESS`
 - **List** all polls filtering by status `FINISHED`
 
+#### Poll Retrieval (`GetPollTests`)
+
+- **Get** poll by ID
+- **Fail** when getting non-existent poll
+
 #### Poll Editing (`EditPollTests`)
 
 - **Edit** poll not started
