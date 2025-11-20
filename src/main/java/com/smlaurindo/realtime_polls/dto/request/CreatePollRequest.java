@@ -1,6 +1,6 @@
-package com.smlaurindo.realtime_polls.dto;
+package com.smlaurindo.realtime_polls.dto.request;
 
-import com.smlaurindo.realtime_polls.validation.annotation.EndDateAfterStartDate;
+import com.smlaurindo.realtime_polls.dto.validation.EndDateAfterStartDate;
 import jakarta.validation.constraints.*;
 
 import java.time.OffsetDateTime;

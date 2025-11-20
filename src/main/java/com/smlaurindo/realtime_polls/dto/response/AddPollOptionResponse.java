@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.dto;
+package com.smlaurindo.realtime_polls.dto.response;
 
 public record AddPollOptionResponse(
         String id,

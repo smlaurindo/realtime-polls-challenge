@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.dto;
+package com.smlaurindo.realtime_polls.dto.error;
 
 import java.time.Instant;
 

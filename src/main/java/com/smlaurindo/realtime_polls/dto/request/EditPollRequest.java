@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.dto;
+package com.smlaurindo.realtime_polls.dto.request;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Size;

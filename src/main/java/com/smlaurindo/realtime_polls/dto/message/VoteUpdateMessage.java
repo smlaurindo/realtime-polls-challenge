@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.message;
+package com.smlaurindo.realtime_polls.dto.message;
 
 public record VoteUpdateMessage(
         String id,

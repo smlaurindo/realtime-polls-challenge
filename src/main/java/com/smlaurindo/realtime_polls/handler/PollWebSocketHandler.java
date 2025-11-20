@@ -1,7 +1,7 @@
 package com.smlaurindo.realtime_polls.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smlaurindo.realtime_polls.message.WebSocketMessage;
+import com.smlaurindo.realtime_polls.dto.message.WebSocketMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

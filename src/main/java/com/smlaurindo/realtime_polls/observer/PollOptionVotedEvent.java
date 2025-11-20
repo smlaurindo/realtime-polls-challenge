@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.event;
+package com.smlaurindo.realtime_polls.observer;
 
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;

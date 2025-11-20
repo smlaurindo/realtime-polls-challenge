@@ -1,7 +1,8 @@
-package com.smlaurindo.realtime_polls.exception;
+package com.smlaurindo.realtime_polls.controller.advice;
 
-import com.smlaurindo.realtime_polls.dto.ErrorResponse;
-import com.smlaurindo.realtime_polls.dto.ValidationErrorResponse;
+import com.smlaurindo.realtime_polls.dto.error.ErrorResponse;
+import com.smlaurindo.realtime_polls.dto.error.ValidationErrorResponse;
+import com.smlaurindo.realtime_polls.service.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -16,7 +17,7 @@ import java.time.Instant;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionAdvice {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValid(

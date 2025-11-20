@@ -1,8 +1,7 @@
-package com.smlaurindo.realtime_polls.listener;
+package com.smlaurindo.realtime_polls.observer;
 
-import com.smlaurindo.realtime_polls.message.VoteUpdateMessage;
-import com.smlaurindo.realtime_polls.event.PollOptionVotedEvent;
-import com.smlaurindo.realtime_polls.message.WebSocketMessage;
+import com.smlaurindo.realtime_polls.dto.message.VoteUpdateMessage;
+import com.smlaurindo.realtime_polls.dto.message.WebSocketMessage;
 import com.smlaurindo.realtime_polls.repository.OptionRepository;
 import com.smlaurindo.realtime_polls.handler.PollWebSocketHandler;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,6 @@
-package com.smlaurindo.realtime_polls.validation.validator;
+package com.smlaurindo.realtime_polls.dto.validation;
 
-import com.smlaurindo.realtime_polls.dto.CreatePollRequest;
-import com.smlaurindo.realtime_polls.validation.annotation.EndDateAfterStartDate;
+import com.smlaurindo.realtime_polls.dto.request.CreatePollRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

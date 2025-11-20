@@ -1,7 +1,10 @@
 package com.smlaurindo.realtime_polls.controller;
 
 import com.smlaurindo.realtime_polls.domain.PollStatus;
-import com.smlaurindo.realtime_polls.dto.*;
+import com.smlaurindo.realtime_polls.dto.request.AddPollOptionRequest;
+import com.smlaurindo.realtime_polls.dto.request.CreatePollRequest;
+import com.smlaurindo.realtime_polls.dto.request.EditPollRequest;
+import com.smlaurindo.realtime_polls.dto.response.*;
 import com.smlaurindo.realtime_polls.service.PollService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

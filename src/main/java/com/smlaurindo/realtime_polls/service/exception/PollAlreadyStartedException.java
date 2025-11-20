@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.exception;
+package com.smlaurindo.realtime_polls.service.exception;
 
 public class PollAlreadyStartedException extends RuntimeException {
     public PollAlreadyStartedException(String message) {

@@ -1,4 +1,4 @@
-package com.smlaurindo.realtime_polls.exception;
+package com.smlaurindo.realtime_polls.service.exception;
 
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {
