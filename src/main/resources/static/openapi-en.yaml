@@ -146,6 +146,51 @@ paths:
                 details: An unexpected error occurred
                 timestamp: '2025-11-09T10:30:00Z'
   /polls/{pollId}:
+    get:
+      tags:
+        - Polls
+      summary: Get poll details
+      description: Returns the details of a specific poll by its ID.
+      operationId: getPoll
+      parameters:
+        - name: pollId
+          in: path
+          description: Poll ID
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        200:
+          description: Poll details returned successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Poll"
+        404:
+          description: Poll not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
     put:
       tags:
         - Polls
