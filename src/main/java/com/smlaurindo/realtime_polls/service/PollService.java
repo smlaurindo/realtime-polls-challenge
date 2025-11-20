@@ -102,6 +102,27 @@ public class PollService {
         return PageResponse.of(page);
     }
 
+    @Transactional(readOnly = true)
+    public GetPollResponse getPoll(String pollId) {
+        var poll = pollRepository.findByIdWithOptions(pollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Poll with id " + pollId + " does not exist."));
+
+        return new GetPollResponse(
+                poll.getId(),
+                poll.getQuestion(),
+                poll.getStatus(),
+                poll.getStartsAt().toString(),
+                poll.getEndsAt().toString(),
+                poll.getOptions().stream()
+                        .map(option -> new GetPollResponse.OptionResponse(
+                                option.getId(),
+                                option.getText(),
+                                option.getVotes()
+                        ))
+                        .toList()
+        );
+    }
+
     @Transactional
     public EditPollResponse editPoll(String pollId, EditPollRequest request) {
         var poll = pollRepository.findByIdWithOptions(pollId)

@@ -146,6 +146,51 @@ paths:
                 details: An unexpected error occurred
                 timestamp: '2025-11-09T10:30:00Z'
   /polls/{pollId}:
+    get:
+      tags:
+        - Polls
+      summary: Obter detalhes de uma enquete
+      description: Retorna os detalhes de uma enquete específica pelo seu ID.
+      operationId: getPoll
+      parameters:
+        - name: pollId
+          in: path
+          description: Id da enquete
+          required: true
+          schema:
+            type: string
+            format: uuidv4
+      responses:
+        200:
+          description: Detalhes da enquete retornados com sucesso
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Poll"
+        404:
+          description: Enquete não encontrada
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 404
+                title: Resource Not Found
+                details: Poll with id {pollId} does not exist.
+                timestamp: '2025-11-09T10:30:00Z'
+        500:
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+              example:
+                apiPath: "/polls/{pollId}"
+                statusCode: 500
+                error: Internal Server Error
+                details: An unexpected error occurred.
+                timestamp: '2025-11-09T10:30:00Z'
     put:
       tags:
         - Polls

@@ -40,6 +40,12 @@ public class PollController {
         return ResponseEntity.ok(polls);
     }
 
+    @GetMapping("/polls/{pollId}")
+    public ResponseEntity<GetPollResponse> getPoll(@PathVariable("pollId") String pollId) {
+        var poll = pollService.getPoll(pollId);
+        return ResponseEntity.ok(poll);
+    }
+
     @PutMapping("/polls/{pollId}")
     public ResponseEntity<EditPollResponse> editPoll(
             @PathVariable("pollId") String pollId,

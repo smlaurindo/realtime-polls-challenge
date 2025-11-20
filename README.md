@@ -427,6 +427,11 @@ Content-Type: application/json
 GET /polls?status=IN_PROGRESS&page=0&size=20&sort=startsAt,desc
 ```
 
+#### Get Poll by ID
+```http
+GET /polls/{pollId}
+```
+
 #### Edit Poll
 ```http
 PUT /polls/{pollId}
@@ -657,6 +662,7 @@ For simplicity, the frontend was developed without frameworks, using only native
 - HTML5
 - CSS3
 - Vanilla JavaScript (no frameworks)
+- WebComponents
 - Native WebSocket API
 - Fetch API for REST API consumption
 
