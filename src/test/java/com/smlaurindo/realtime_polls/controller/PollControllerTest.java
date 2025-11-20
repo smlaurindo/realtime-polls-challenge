@@ -341,6 +341,54 @@ class PollControllerTest {
     }
 
     @Nested
+    @DisplayName("GET /polls/{pollId} - Get Poll By ID Tests")
+    class GetPollTests {
+        private final String apiPath = "/polls/%s";
+
+        @Test
+        @DisplayName("Should get poll by ID")
+        void shouldGetPollById() {
+            Instant now = Instant.now();
+            Poll poll = createTestPoll("Sample Poll", now.plusSeconds(3600), now.plusSeconds(7200));
+
+            var uri = apiPath.formatted(poll.getId());
+            var expectedPollStatus = "NOT_STARTED";
+
+            webTestClient.get()
+                    .uri(uri)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody()
+                    .jsonPath("$.id").isEqualTo(poll.getId())
+                    .jsonPath("$.question").isEqualTo(poll.getQuestion())
+                    .jsonPath("$.status").isEqualTo(expectedPollStatus)
+                    .jsonPath("$.startsAt").isEqualTo(poll.getStartsAt())
+                    .jsonPath("$.endsAt").isEqualTo(poll.getEndsAt())
+                    .jsonPath("$.options.length()").isEqualTo(poll.getOptions().size());
+        }
+
+        @Test
+        @DisplayName("Should fail to get non-existent poll")
+        void shouldFailToGetNonExistentPoll() {
+            var uri = apiPath.formatted(randomUUID());
+
+            var expectedStatusCode = HttpStatus.NOT_FOUND.value();
+            var expectedErrorTitle = "Resource Not Found";
+
+            webTestClient.get()
+                    .uri(uri)
+                    .exchange()
+                    .expectStatus().isEqualTo(expectedStatusCode)
+                    .expectBody()
+                    .jsonPath("$.apiPath").isEqualTo(uri)
+                    .jsonPath("$.statusCode").isEqualTo(expectedStatusCode)
+                    .jsonPath("$.title").isEqualTo(expectedErrorTitle)
+                    .jsonPath("$.details").isNotEmpty()
+                    .jsonPath("$.timestamp").isNotEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("PUT /polls/{pollId} - Edit Poll Tests")
     class EditPollTests {
 
