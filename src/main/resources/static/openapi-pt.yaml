@@ -24,9 +24,14 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 1.0.0
 servers:
-  - url: 'http://localhost:{port}'
+  - url: 'https://realtime-polls-app.onrender.com/'
+    description: Servidor de Produção
+  - url: 'http://{host}:{port}'
     description: Servidor de Desenvolvimento Local
     variables:
+      host:
+        default: 'localhost'
+        description: Host do servidor
       port:
         default: '8080'
         descriptions: Porta do servidor
