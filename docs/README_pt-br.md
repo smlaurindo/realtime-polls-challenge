@@ -699,6 +699,7 @@ cp .env.example .env
 ```env
 SERVER_PORT=8080
 
+POSTGRES_HOST=localhost
 POSTGRES_USER=realtime_poll_db_user
 POSTGRES_PASSWORD=realtime_poll_db_password
 POSTGRES_DB=realtime_poll_db
